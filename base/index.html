@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>image</title>
+        <meta charset="utf-8">
+    </head>
+    <body>
+        <h1>image</h1>
+        <input type="file" multiple="false" id="selectimg" onchange="fileChanged(this)" style="visibility: visible;">
+        <img id="checkinputed">
+    </body>
+</html>
+<script>
+
+if (window.location.hash=="#test") {
+    document.getElementById("selectimg").style.visibility = "hidden"
+    document.getElementById("checkinputed").src = "/test.jpg";
+}
+function fileChanged(input) {
+    console.log(input);
+    for (let i = 0; i < input.files.length; i++) {
+        console.log(input.files[i]);
+        var reader = new FileReader();
+        reader.onload = function (data) {
+            document.getElementById("checkinputed").src = data.target.result;
+        }
+        reader.readAsDataURL(input.files[0]);
+    }
+}
+
+</script>
