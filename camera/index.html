@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>image</title>
+        <meta charset="utf-8">
+    </head>
+    <body>
+        <div id="img_area">
+            <canvas id="imgOut" style="image-rendering: pixelated;"></canvas>
+        </div>
+    </body>
+</html>
+<script src="../gpu-browser.min.js"></script>
+<script>
+
+let videoElement
+async function startCamera() {
+    cameraStream = await navigator.mediaDevices.getUserMedia({
+        video: {
+        facingMode: 'environment',
+
+        aspectRatio: {
+            exact: 1.6,
+        },
+        },
+        audio: false,
+    });
+    videoElement = document.createElement("video")
+    videoElement.autoplay = true;
+    videoElement.srcObject = cameraStream;
+    //document.body.append(videoElement);
+        videoElement.addEventListener("resize", () => {
+            videoElement.width = videoElement.videoWidth;
+            videoElement.height = videoElement.videoHeight;
+        });
+    setTimeout(run,1000)
+}
+startCamera()
+
+
+function captureImage(videoElement) {
+    const canvas = document.createElement('canvas');
+    const context = canvas.getContext('2d');
+    canvas.width = videoElement.videoWidth;
+    canvas.height = videoElement.videoHeight;
+    context.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
+    let ctx = canvas.getContext("2d");
+    return ctx.getImageData(0,0,canvas.width,canvas.height);
+}
+
+const gpu = new GPU({ mode: 'cpu', });
+function run() {
+    iarr = captureImage(videoElement);
+
+    prc = gpu.createKernel(function(iarr,x,y) {
+        index = ((y-this.thread.y)*x+this.thread.x)*4
+        this.color(
+            1-iarr[index+0]/255,
+            1-iarr[index+1]/255,
+            1-iarr[index+2]/255,
+            iarr[index+3]/255,
+        );
+    })
+    .setGraphical(true)
+    .setOutput([iarr.width,iarr.height]);
+    prc(iarr.data,iarr.width,iarr.height);
+    cavs = prc.canvas.getContext("2d");
+    riarr = cavs.getImageData(0,0,prc.canvas.width,prc.canvas.height);
+    celm = document.getElementById("imgOut");
+    celmc = celm.getContext("2d")
+    celmc.putImageData(new ImageData(riarr.data,iarr.width,iarr.height),0,0);
+    resizeImg()
+    setTimeout(run,1);
+}
+
+
+// resize window
+function resizeImg() {
+    canvas = document.getElementById("imgOut")
+    dw = canvas.width;
+    dh = canvas.height;
+    let bottom_area = 0;
+    let rw = 0;let rh = 0;
+    let ww = window.innerWidth;
+    let wh = window.innerHeight-bottom_area;
+    let csc = 1
+    hcsc = ww/dw
+    wcsc = wh/dh
+    console.log(hcsc,wcsc)
+    if (hcsc>wcsc) {
+        csc = wcsc
+        rw = (ww - dw*csc)/2
+    }
+    else {
+        csc = hcsc
+        rh = (wh - dh*csc)/2
+    }
+    document.getElementById("imgOut").style.marginTop = (rh).toString()+"px";
+    document.getElementById("imgOut").style.marginBottom = (rh).toString()+"px";
+    document.getElementById("imgOut").style.marginLeft = (rw).toString()+"px";
+    document.getElementById("imgOut").style.marginRight = (rw).toString()+"px";
+    document.getElementById("imgOut").style.transform = "scale("+csc.toString()+","+csc.toString()+")";
+};
+window.onresize = resizeImg;
+resizeImg(); // first resize
+
+
+</script>
+<style>
+    
+* {
+    font-size: 23px;
+}
+.notselectable {
+    -ms-user-select: none;
+    -moz-user-select: -moz-none;
+    -khtml-user-select: none;
+    -webkit-user-select: none;
+    user-select: none;
+}
+
+body::-webkit-scrollbar {
+    display: none;
+}
+body {
+    overflow: hidden;
+    -ms-overflow-style: none;    /* IE, Edge 対応 */
+    scrollbar-width: none;       /* Firefox 対応 */
+    background: rgb(0,0,0);
+}
+
+p {
+    margin: 3px;
+}
+
+#img_area {
+    top: 0;
+    left: 0;
+    position: absolute;
+    z-index: -1;
+}
+
+#control_area {
+    width: 100%;
+    top: 10px;
+    left: 0px;
+    position: absolute;
+}
+
+#control {
+    padding: 5px;
+    border-radius: 5px;
+    background: rgba(255,255,255,0.6);
+    min-width: 500px;
+    max-width: 1000px;
+    width: 70%;
+}
+#information_area {
+    width: 100%;
+    bottom: 35px;
+    left: 0px;
+    position: absolute;
+}
+.s_buttonarea {
+    position: absolute;
+    bottom: 0px;
+    height: 100px;
+    width: 100vw;
+}
+.s_button {
+    background: rgba(255,255,255,0.7);
+    font-size: 30px;
+    width: 220px;
+    height: 60px;
+}
+.s_button:hover {
+    background: rgba(215, 215, 215, 0.7);
+}
+.s_button:active {
+    background: rgba(168, 168, 168,0.7);
+}
+#imgOut {
+    transform-origin: top left;
+}
+
+.result_area{
+    position: absolute;
+    top: 10px;
+    height: 100px;
+    width: 100vw;
+}
+#result_area{
+    height: 100%;
+    width: 50%;
+}
+
+.result {
+    border-radius: 10px;
+    background: rgba(255,255,255,0.8);
+    padding: 10px;
+    height: calc(100% - 20px);
+    width: 50%;
+}
+
+</style>
