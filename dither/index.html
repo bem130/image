@@ -46,17 +46,19 @@ function fileChanged(input) {
 
 
 
-const gpu = new GPU({ mode: 'gpu', });
+const gpu = new GPU({ mode: 'cpu', });
 function run() {
     imgelm = document.getElementById("checkinputed");
     iarr = getimg(imgelm);
 
     const prc = gpu.createKernel(function(iarr,x,y) {
         let index = ((y-this.thread.y)*x+this.thread.x)*4
+        let rdm = Math.floor((x*0.01)%1)*Math.floor((y*0.01)%1)
+        rdm = Math.random()
         this.color(
-            Math.floor((Math.random()+0.5)*(iarr[index+0]/256)*2),
-            Math.floor((Math.random()+0.5)*(iarr[index+1]/256)*2),
-            Math.floor((Math.random()+0.5)*(iarr[index+2]/256)*2),
+            Math.floor((rdm+0.5) * (iarr[index+0]/256)*2),
+            Math.floor((rdm+0.5) * (iarr[index+1]/256)*2),
+            Math.floor((rdm+0.5) * (iarr[index+2]/256)*2),
             iarr[index+3]/255,
         );
     })
@@ -90,5 +92,6 @@ function getimg(img) {
     #checkinputed,#output {
         max-width: 50%;
         max-height: 50vh;
+        image-rendering: pixelated;
     }
 </style>
