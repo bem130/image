@@ -48,7 +48,7 @@ function captureImage(videoElement) {
     return ctx.getImageData(0,0,canvas.width,canvas.height);
 }
 
-const gpu = new GPU({ mode: 'cpu', });
+const gpu = new GPU({ mode: 'gpu', });
 function run() {
     iarr = captureImage(videoElement);
 
