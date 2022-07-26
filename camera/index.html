@@ -26,7 +26,7 @@
 mode = "dither"
 
 let display_list = [ // "name": [width,height,aspectraito(w),aspectraito(h),displayscale]
-        "dither","declease","invert","invert_dither","normal"
+        "dither","decrease","invert","invert_dither","normal"
 ];
 
     var drsel;
@@ -124,7 +124,7 @@ function run() {
     .setGraphical(true)
     .setOutput([iarr.width,iarr.height]);
 
-    prgs.declease = gpu.createKernel(function(iarr,x,y) {
+    prgs.decrease = gpu.createKernel(function(iarr,x,y) {
         let index = ((y-this.thread.y)*x+this.thread.x)*4
         this.color(
             Math.floor((iarr[index+0]+64)/128-0.25)/2,
