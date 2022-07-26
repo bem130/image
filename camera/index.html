@@ -13,12 +13,35 @@
                 <ul style="width: 100%;padding: 0;margin: 0;">
                     <li style="display: inline-block;"><center><p>FPS: <span id="show_fps"></span></p></center></li>
                 </ul>
+                
+                <select id="mode" onchange="mode=this.value">
+                </select>
             </center>
         </div>
     </body>
 </html>
 <script src="../gpu-browser.min.js"></script>
 <script>
+
+mode = "dither"
+
+let display_list = [ // "name": [width,height,aspectraito(w),aspectraito(h),displayscale]
+        "dither","declease","invert","invert_dither","normal"
+];
+
+    var drsel;
+    {
+        // make display resolution list
+        drsel = document.getElementById("mode");
+        let dlkeys = display_list;
+        for (i=0;i<dlkeys.length;i++) {
+            oel = document.createElement("option");
+            oel.value = dlkeys[i];
+            oel.textContent = dlkeys[i];
+            drsel.appendChild(oel);
+        }
+        drsel.value = "dither";
+    }
 
 let videoElement
 async function startCamera() {
@@ -60,7 +83,8 @@ let bstart = Date.now()
 function run() {
     iarr = captureImage(videoElement);
 
-    prc = gpu.createKernel(function(iarr,x,y) {
+    prgs = {}
+    prgs.invert = gpu.createKernel(function(iarr,x,y) {
         let index = ((y-this.thread.y)*x+this.thread.x)*4
         this.color(
             1-iarr[index+0]/255,
@@ -71,17 +95,71 @@ function run() {
     })
     .setGraphical(true)
     .setOutput([iarr.width,iarr.height]);
+
+    prgs.dither = gpu.createKernel(function(iarr,x,y) {
+        let index = ((y-this.thread.y)*x+this.thread.x)*4
+        let rdm = Math.floor((x*0.01)%1)*Math.floor((y*0.01)%1)
+        rdm = Math.random()
+        this.color(
+            Math.floor((rdm+0.5) * (iarr[index+0]/256)*2),
+            Math.floor((rdm+0.5) * (iarr[index+1]/256)*2),
+            Math.floor((rdm+0.5) * (iarr[index+2]/256)*2),
+            iarr[index+3]/255,
+        );
+    })
+    .setGraphical(true)
+    .setOutput([iarr.width,iarr.height]);
+    
+    prgs.invert_dither = gpu.createKernel(function(iarr,x,y) {
+        let index = ((y-this.thread.y)*x+this.thread.x)*4
+        let rdm = Math.floor((x*0.01)%1)*Math.floor((y*0.01)%1)
+        rdm = Math.random()
+        this.color(
+            Math.floor((rdm+0.5) * ((255-iarr[index+0])/256)*2),
+            Math.floor((rdm+0.5) * ((255-iarr[index+1])/256)*2),
+            Math.floor((rdm+0.5) * ((255-iarr[index+2])/256)*2),
+            iarr[index+3]/255,
+        );
+    })
+    .setGraphical(true)
+    .setOutput([iarr.width,iarr.height]);
+
+    prgs.declease = gpu.createKernel(function(iarr,x,y) {
+        let index = ((y-this.thread.y)*x+this.thread.x)*4
+        this.color(
+            Math.floor((iarr[index+0]+64)/128-0.25)/2,
+            Math.floor((iarr[index+1]+64)/128-0.25)/2,
+            Math.floor((iarr[index+2]+64)/128-0.25)/2,
+            iarr[index+3]/255,
+        );
+    })
+    .setGraphical(true)
+    .setOutput([iarr.width,iarr.height]);
+
+    prgs.normal = gpu.createKernel(function(iarr,x,y) {
+        let index = ((y-this.thread.y)*x+this.thread.x)*4
+        this.color(
+            iarr[index+0]/255,
+            iarr[index+1]/255,
+            iarr[index+2]/255,
+            iarr[index+3]/255,
+        );
+    })
+    .setGraphical(true)
+    .setOutput([iarr.width,iarr.height]);
+
+    prc = prgs[mode]
     prc(iarr.data,iarr.width,iarr.height);
+    
     cavs = prc.canvas;
     resizeImg()
     document.getElementById('img_area').replaceChildren(cavs);
-    setTimeout(run,0);
+    setTimeout(run,20);
     bend = Date.now()
     document.getElementById("show_fps").innerHTML = 1000/(bend-bstart)
     bstart = Date.now()
 }
 let cavs
-
 
 // resize window
 function resizeImg() {
@@ -167,6 +245,7 @@ p {
     bottom: 35px;
     left: 0px;
     position: absolute;
+    background-color: white;
 }
 .s_buttonarea {
     position: absolute;
