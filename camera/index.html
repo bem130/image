@@ -8,6 +8,13 @@
         <div id="img_area">
             <canvas id="imgOut" style="image-rendering: pixelated;"></canvas>
         </div>
+        <div id="information_area" class="notselectable"><!--control-->
+            <center>
+                <ul style="width: 100%;padding: 0;margin: 0;">
+                    <li style="display: inline-block;"><center><p>FPS: <span id="show_fps"></span></p></center></li>
+                </ul>
+            </center>
+        </div>
     </body>
 </html>
 <script src="../gpu-browser.min.js"></script>
@@ -48,7 +55,8 @@ function captureImage(videoElement) {
     return ctx.getImageData(0,0,canvas.width,canvas.height);
 }
 
-const gpu = new GPU({ mode: 'gpu', });
+let gpu = new GPU({ mode: 'gpu', });
+let bstart = Date.now()
 function run() {
     iarr = captureImage(videoElement);
 
@@ -67,7 +75,10 @@ function run() {
     cavs = prc.canvas;
     resizeImg()
     document.getElementById('img_area').replaceChildren(cavs);
-    setTimeout(run,1);
+    setTimeout(run,0);
+    bend = Date.now()
+    document.getElementById("show_fps").innerHTML = 1000/(bend-bstart)
+    bstart = Date.now()
 }
 let cavs
 
@@ -84,7 +95,7 @@ function resizeImg() {
     let csc = 1
     hcsc = ww/dw
     wcsc = wh/dh
-    console.log(hcsc,wcsc)
+    // console.log(hcsc,wcsc)
     if (hcsc>wcsc) {
         csc = wcsc
         rw = (ww - dw*csc)/2
