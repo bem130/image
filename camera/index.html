@@ -53,7 +53,7 @@ function run() {
     iarr = captureImage(videoElement);
 
     prc = gpu.createKernel(function(iarr,x,y) {
-        index = ((y-this.thread.y)*x+this.thread.x)*4
+        let index = ((y-this.thread.y)*x+this.thread.x)*4
         this.color(
             1-iarr[index+0]/255,
             1-iarr[index+1]/255,
@@ -64,19 +64,17 @@ function run() {
     .setGraphical(true)
     .setOutput([iarr.width,iarr.height]);
     prc(iarr.data,iarr.width,iarr.height);
-    cavs = prc.canvas.getContext("2d");
-    riarr = cavs.getImageData(0,0,prc.canvas.width,prc.canvas.height);
-    celm = document.getElementById("imgOut");
-    celmc = celm.getContext("2d")
-    celmc.putImageData(new ImageData(riarr.data,iarr.width,iarr.height),0,0);
+    cavs = prc.canvas;
     resizeImg()
+    document.getElementById('img_area').replaceChildren(cavs);
     setTimeout(run,1);
 }
+let cavs
 
 
 // resize window
 function resizeImg() {
-    canvas = document.getElementById("imgOut")
+    canvas = cavs
     dw = canvas.width;
     dh = canvas.height;
     let bottom_area = 0;
@@ -95,14 +93,12 @@ function resizeImg() {
         csc = hcsc
         rh = (wh - dh*csc)/2
     }
-    document.getElementById("imgOut").style.marginTop = (rh).toString()+"px";
-    document.getElementById("imgOut").style.marginBottom = (rh).toString()+"px";
-    document.getElementById("imgOut").style.marginLeft = (rw).toString()+"px";
-    document.getElementById("imgOut").style.marginRight = (rw).toString()+"px";
-    document.getElementById("imgOut").style.transform = "scale("+csc.toString()+","+csc.toString()+")";
+    canvas.style.marginTop = (rh).toString()+"px";
+    canvas.style.marginBottom = (rh).toString()+"px";
+    canvas.style.marginLeft = (rw).toString()+"px";
+    canvas.style.marginRight = (rw).toString()+"px";
+    canvas.style.transform = "scale("+csc.toString()+","+csc.toString()+")";
 };
-window.onresize = resizeImg;
-resizeImg(); // first resize
 
 
 </script>
@@ -179,7 +175,7 @@ p {
 .s_button:active {
     background: rgba(168, 168, 168,0.7);
 }
-#imgOut {
+canvas {
     transform-origin: top left;
 }
 
