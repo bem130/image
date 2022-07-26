@@ -52,7 +52,7 @@ function run() {
     iarr = getimg(imgelm);
 
     const prc = gpu.createKernel(function(iarr,x,y) {
-        index = ((y-this.thread.y)*x+this.thread.x)*4
+        let index = ((y-this.thread.y)*x+this.thread.x)*4
         this.color(
             1-iarr[index+0]/255,
             1-iarr[index+1]/255,
