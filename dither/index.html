@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>image</title>
+        <meta charset="utf-8">
+    </head>
+    <body>
+        <center>
+            <div id="main">
+                <h1>image</h1>
+                <div>
+                    <button onclick="selectfile()" id="selectimg">select</button><br>
+                    <img id="checkinputed">
+                </div>
+                <div>
+                    <button onclick="run()">run</button><br>
+                    <img id="output">
+                </div>
+            </div>
+        </center>
+    </body>
+</html>
+<script src="../gpu-browser.min.js"></script>
+<script>
+
+
+if (window.location.hash=="#test") {
+    document.getElementById("checkinputed").src = "/test.jpg";
+}
+
+function selectfile() {
+    ifelm = document.createElement("input");
+    ifelm.type = "file";
+    ifelm.onchange = function() {fileChanged(this)};
+    ifelm.click();
+}
+function fileChanged(input) {
+    for (let i = 0; i < input.files.length; i++) {
+        var reader = new FileReader();
+        reader.onload = function (data) {
+            document.getElementById("checkinputed").src = data.target.result;
+        }
+        reader.readAsDataURL(input.files[0]);
+    }
+}
+
+
+
+const gpu = new GPU({ mode: 'gpu', });
+function run() {
+    imgelm = document.getElementById("checkinputed");
+    iarr = getimg(imgelm);
+
+    const prc = gpu.createKernel(function(iarr,x,y) {
+        let index = ((y-this.thread.y)*x+this.thread.x)*4
+        this.color(
+            Math.floor((Math.random()+0.5)*(iarr[index+0]/256)*2),
+            Math.floor((Math.random()+0.5)*(iarr[index+1]/256)*2),
+            Math.floor((Math.random()+0.5)*(iarr[index+2]/256)*2),
+            iarr[index+3]/255,
+        );
+    })
+    .setGraphical(true)
+    .setOutput([iarr.width,iarr.height]);
+
+    prc(iarr.data,iarr.width,iarr.height);
+    document.getElementById("output").src = (prc.canvas).toDataURL('image/png');
+}
+function getimg(img) {
+    let canvas = document.createElement("canvas");
+    canvas.height = img.naturalHeight;
+    canvas.width = img.naturalWidth;
+    let ctx = canvas.getContext("2d");
+    ctx.drawImage(img,0,0);
+    return ctx.getImageData(0,0,img.naturalWidth,img.naturalHeight);
+}
+</script>
+<style>
+    body {
+        background-color: aliceblue;
+    }
+    #main {
+        background-color: bisque;
+        min-width: 150px;
+        max-width: 1500px;
+        margin: 30px;
+        padding: 20px;
+        border-radius: 20px;
+    }
+    #checkinputed,#output {
+        max-width: 50%;
+        max-height: 50vh;
+    }
+</style>
