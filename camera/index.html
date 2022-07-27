@@ -154,7 +154,7 @@ function run() {
     cavs = prc.canvas;
     resizeImg()
     document.getElementById('img_area').replaceChildren(cavs);
-    setTimeout(run,20);
+    setTimeout(run,100);
     bend = Date.now()
     document.getElementById("show_fps").innerHTML = 1000/(bend-bstart)
     bstart = Date.now()
